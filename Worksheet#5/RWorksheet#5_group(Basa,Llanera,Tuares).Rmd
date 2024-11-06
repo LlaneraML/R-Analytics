@@ -1,0 +1,115 @@
+---
+title: "RWorksheet#5_Group(Basa,Llanera,Tuares)"
+output: pdf_document
+date: "2024-11-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# Load necessary libraries
+library(polite)
+library(rvest)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+
+# Function to scrape products from a given category URL
+scrape_amazon_category <- function(category_url, category_name) {
+  # Create a polite session
+  session <- bow(category_url, user_agent = "Educational")
+ 
+  # Scrape the page
+  page <- scrape(session)
+ 
+  # Extract product details
+  products <- page %>%
+    html_nodes(".s-main-slot .s-result-item") %>%
+    map_df(~ {
+      tibble(
+        Title = .x %>% html_node("h2") %>% html_text(trim = TRUE),
+        Price = .x %>% html_node(".a-price .a-offscreen") %>% html_text(trim = TRUE),
+        Description = .x %>% html_node(".a-text-normal") %>% html_text(trim = TRUE),
+        Rating = .x %>% html_node(".a-icon-alt") %>% html_text(trim = TRUE),
+        Reviews = .x %>% html_node(".a-size-small .a-link-normal") %>% html_text(trim = TRUE),
+        Category = category_name  # Add category name here
+      )
+    })
+ 
+  return(products)
+}
+
+
+categories <- list(
+ computers = 'https://www.amazon.com/s?k=computers',
+   luggage = 'https://www.amazon.com/s?k=luggage',
+   dress = 'https://www.amazon.com/s?k=dress2',
+   TV = 'https://www.amazon.com/s?k=TV',
+   ballpen = 'https://www.amazon.com/s?k=ballpen'
+)
+
+
+all_products <- tibble()
+
+
+for (category_name in names(categories)) {
+  category_url <- categories[[category_name]]
+  category_products <- scrape_amazon_category(category_url, category_name)
+  all_products <- bind_rows(all_products, category_products)
+ 
+ 
+  if (nrow(all_products) > 30) {
+    all_products <- all_products %>% slice(1:30)
+  }
+}
+
+
+all_products$Price <- as.numeric(gsub("\\$", "", gsub(",", "", all_products$Price)))
+all_products$Rating <- as.numeric(gsub(" out of 5 stars", "", all_products$Rating))
+
+
+print(all_products)
+
+
+ggplot(all_products, aes(x = Title, y = Price, fill = Category)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Price of Products by Category", x = "Product", y = "Price ($)")
+
+ggplot(all_products, aes(x = Title, y = Rating, fill = Category)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Ratings of Products by Category", x = "Product", y = "Rating (out of 5)")
+
+ranked_by_price <- all_products %>%
+  group_by(Category) %>%
+  arrange(Price) %>%
+  mutate(Price_Rank = row_number())
+
+
+ranked_by_rating <- all_products %>%
+  group_by(Category) %>%
+  arrange(desc(Rating)) %>%
+  mutate(Rating_Rank = row_number())
+
+
+print(ranked_by_price)
+print(ranked_by_rating)
+```
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
