@@ -8,22 +8,21 @@ date: "2024-11-06"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ```{r}
-# Load necessary libraries
 library(polite)
 library(rvest)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 
-# Function to scrape products from a given category URL
+
 scrape_amazon_category <- function(category_url, category_name) {
-  # Create a polite session
+  
   session <- bow(category_url, user_agent = "Educational")
  
-  # Scrape the page
+  
   page <- scrape(session)
  
-  # Extract product details
+ 
   products <- page %>%
     html_nodes(".s-main-slot .s-result-item") %>%
     map_df(~ {
@@ -33,7 +32,7 @@ scrape_amazon_category <- function(category_url, category_name) {
         Description = .x %>% html_node(".a-text-normal") %>% html_text(trim = TRUE),
         Rating = .x %>% html_node(".a-icon-alt") %>% html_text(trim = TRUE),
         Reviews = .x %>% html_node(".a-size-small .a-link-normal") %>% html_text(trim = TRUE),
-        Category = category_name  # Add category name here
+        Category = category_name 
       )
     })
  
@@ -42,11 +41,11 @@ scrape_amazon_category <- function(category_url, category_name) {
 
 
 categories <- list(
- computers = 'https://www.amazon.com/s?k=computers',
-   luggage = 'https://www.amazon.com/s?k=luggage',
-   dress = 'https://www.amazon.com/s?k=dress2',
-   TV = 'https://www.amazon.com/s?k=TV',
-   ballpen = 'https://www.amazon.com/s?k=ballpen'
+  computers = 'https://www.amazon.com/s?k=computers',
+  luggage = 'https://www.amazon.co.jp/s?k=luggage',
+  dress = 'https://www.amazon.com.au/s?k=dress',
+  TV = 'https://www.amazon.ca/s?k=TV',
+  ballpen = 'https://www.amazon.de/s?k=Ballpen'
 )
 
 
@@ -58,7 +57,7 @@ for (category_name in names(categories)) {
   category_products <- scrape_amazon_category(category_url, category_name)
   all_products <- bind_rows(all_products, category_products)
  
- 
+  
   if (nrow(all_products) > 30) {
     all_products <- all_products %>% slice(1:30)
   }
@@ -83,6 +82,7 @@ ggplot(all_products, aes(x = Title, y = Rating, fill = Category)) +
   coord_flip() +
   theme_minimal() +
   labs(title = "Ratings of Products by Category", x = "Product", y = "Rating (out of 5)")
+
 
 ranked_by_price <- all_products %>%
   group_by(Category) %>%
