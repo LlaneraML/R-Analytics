@@ -1,0 +1,64 @@
+---
+title: "Untitled"
+output: pdf_document
+date: "2024-11-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(polite)
+library(rvest)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+
+url <- "https://www.amazon.co.uk/s?k=electronics&crid=26IFAXG7WOQZK&sprefix=electroni%2Caps%2C314&ref=nb_sb_noss_2"
+
+session <- bow(url,
+               user_agent = "Student's Demo Educational")
+session
+
+session_page <- scrape(session)
+```
+
+
+```{r}
+html <- read_html('<div class="sg-col-14-of-20 sg-col-18-of-24 sg-col s-breadcrumb sg-col-10-of-16 sg-col-6-of-12"><div class="sg-col-inner">
+            <div class="a-section a-spacing-small a-spacing-top-small">
+                <span>1-48 of over 100,000 results for</span><span> </span><span class="a-color-state a-text-bold">"electronics"</span>
+            </div>
+        </div></div>')
+  div_elements <- html %>%
+                  html_nodes("li") %>%
+                  html_text()
+```
+
+```{r}
+links <- character() 
+titles <- character()
+prices <- character()
+ratings <- character()
+```
+
+```{r}
+for (div_element in div_elements) {
+  
+  a_element <- html_node(div_element, 'a.a-link-normal.s-no-outline')
+  link <- ifelse(!is.na(a_element), paste0("https://amazon.com", html_attr(a_element, "href")), '')
+  
+  
+   title_element <- html_node(div_element, 'span.a-size-base-plus.a-color-base.a-text-normal')
+  title <- ifelse(!is.na(title_element), html_text(title_element), '')
+  
+  price_element <- html_node(div_element, 'span.a-price-whole')
+  price <- ifelse(!is.na(price_element), html_text(price_element), '')
+  
+  rating_element <- html_node(div_element, 'span.a-icon-alt')
+  rating <- ifelse(!is.na(rating_element), html_text(rating_element), '')
+}
+```
+
+
