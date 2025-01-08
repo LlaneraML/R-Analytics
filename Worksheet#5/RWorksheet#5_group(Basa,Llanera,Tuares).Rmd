@@ -1,7 +1,8 @@
 ---
 title: "RWorksheet#5_Group(Basa,Llanera,Tuares)"
+author: "Basa,Llanera,Tuares"
+date: "2024-12-16"
 output: pdf_document
-date: "2024-11-06"
 ---
 
 ```{r setup, include=FALSE}
@@ -9,100 +10,65 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ```{r}
 library(polite)
-library(rvest)
-library(dplyr)
-library(purrr)
-library(ggplot2)
+library(kableExtra)
+library(rmarkdown)
 
+url <- 'https://www.amazon.com/ref=nav_logo'
 
-scrape_amazon_category <- function(category_url, category_name) {
-  
-  session <- bow(category_url, user_agent = "Educational")
- 
-  
-  page <- scrape(session)
- 
- 
-  products <- page %>%
-    html_nodes(".s-main-slot .s-result-item") %>%
-    map_df(~ {
-      tibble(
-        Title = .x %>% html_node("h2") %>% html_text(trim = TRUE),
-        Price = .x %>% html_node(".a-price .a-offscreen") %>% html_text(trim = TRUE),
-        Description = .x %>% html_node(".a-text-normal") %>% html_text(trim = TRUE),
-        Rating = .x %>% html_node(".a-icon-alt") %>% html_text(trim = TRUE),
-        Reviews = .x %>% html_node(".a-size-small .a-link-normal") %>% html_text(trim = TRUE),
-        Category = category_name 
-      )
-    })
- 
-  return(products)
-}
+session <- bow(url,
+              user_agent = "Educational")
+session
 
-
-categories <- list(
-  computers = 'https://www.amazon.com/s?k=computers',
-  luggage = 'https://www.amazon.co.jp/s?k=luggage',
-  dress = 'https://www.amazon.com.au/s?k=dress',
-  TV = 'https://www.amazon.ca/s?k=TV',
-  ballpen = 'https://www.amazon.de/s?k=Ballpen'
-)
-
-
-all_products <- tibble()
-
-
-for (category_name in names(categories)) {
-  category_url <- categories[[category_name]]
-  category_products <- scrape_amazon_category(category_url, category_name)
-  all_products <- bind_rows(all_products, category_products)
- 
-  
-  if (nrow(all_products) > 30) {
-    all_products <- all_products %>% slice(1:30)
-  }
-}
-
-
-all_products$Price <- as.numeric(gsub("\\$", "", gsub(",", "", all_products$Price)))
-all_products$Rating <- as.numeric(gsub(" out of 5 stars", "", all_products$Rating))
-
-
-print(all_products)
-
-
-ggplot(all_products, aes(x = Title, y = Price, fill = Category)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  theme_minimal() +
-  labs(title = "Price of Products by Category", x = "Product", y = "Price ($)")
-
-ggplot(all_products, aes(x = Title, y = Rating, fill = Category)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  theme_minimal() +
-  labs(title = "Ratings of Products by Category", x = "Product", y = "Rating (out of 5)")
-
-
-ranked_by_price <- all_products %>%
-  group_by(Category) %>%
-  arrange(Price) %>%
-  mutate(Price_Rank = row_number())
-
-
-ranked_by_rating <- all_products %>%
-  group_by(Category) %>%
-  arrange(desc(Rating)) %>%
-  mutate(Rating_Rank = row_number())
-
-
-print(ranked_by_price)
-print(ranked_by_rating)
+page <- scrape(session)
 ```
 
+```{r}
+library(polite)
+library(kableExtra)
+library(rmarkdown)
+library(rvest)
+
+url <- 'https://www.imdb.com/search/title/?title_type=tv_series&sort=num_votes,desc'
+
+session <- bow(url, user_agent = "Educational")
+session
+
+rank_title <- character(0)
+links <- character(0)
+
+titlelist <- scrape(session) %>%
+  html_nodes('h3.ipc-title__text') %>% 
+  html_text
+
+titlelist_sub <- as.data.frame(titlelist[1:50])
+head(titlelist_sub)
+tail(titlelist_sub)
+
+colnames(titlelist_sub) <- "ranks"
+
+splits_df <- strsplit(as.character(titlelist_sub$ranks),".",fixed = TRUE)
+splits_df <- data.frame(do.call(rbind,splits_df))
 
 
+splits_df <- splits_df[-c(3:4)] 
 
+
+colnames(splits_df) <- c("ranks","title") 
+
+
+str(splits_df) 
+
+head(splits_df)
+splits_df
+```
+
+```{r}
+
+```
+
+```{r cars}
+summary(cars)
+```
 
 ## Including Plots
 
